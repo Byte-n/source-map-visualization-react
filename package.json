@@ -6,6 +6,10 @@
     "source map",
     "source-map"
   ],
+  "homepage": "https://byte-n.github.io/source-map-visualization-react/",
+  "bugs": {
+    "url": "https://github.com/Byte-n/source-map-visualization-react/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Byte-n/source-map-visualization-react"

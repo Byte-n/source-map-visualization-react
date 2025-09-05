@@ -27,6 +27,46 @@
 npm install @byte.n/source-map-visualization-react
 ```
 
+## 快速开始
+
+```tsx
+import React, { useRef } from 'react';
+import SourceMapVisualization, {
+  type SourceMapVisualizationProps,
+} from '@byte.n/source-map-visualization-react';
+
+export default () => {
+  const ref = useRef<{ ele: HTMLDivElement }>(null);
+  return (
+    <div style={{ width: 800, height: 600 }}>
+      <SourceMapVisualization
+        ref={ref as any}
+        code={'/* minified code here */'}
+        codeMap={'/* source map string or data url */'}
+      />
+    </div>
+  );
+};
+```
+
+- **最小必需属性**: `code`
+- **可选属性**: `codeMap`、`codeMapStyle`、`hoverRestoreDelayMs`、`prefixCls`、`className`、`classNames`、`style`、`styles`、`renderTopBar`、`renderBottomBar`
+
+## 类型
+
+`@types` 已内置，无需额外安装：
+
+```ts
+import type {
+  SourceMapVisualizationProps,
+  TopBarProps,
+  BottomBarProps,
+  CodeHover,
+  SourceCodeHover,
+  CodeMapStyle,
+  Instance,
+} from '@byte.n/source-map-visualization-react';
+```
 
 ## 文档
 
