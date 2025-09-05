@@ -71,7 +71,11 @@ const exampleMap = `{
 export default () => {
   return (
     <div style={{ height: 500 }}>
-      <SourceMapVisualization code={exampleJS} codeMap={exampleMap} />
+      <SourceMapVisualization
+        code={exampleJS}
+        codeMap={exampleMap}
+        hoverRestoreDelayMs={2000}
+      />
     </div>
   );
 };
@@ -134,6 +138,7 @@ import { EnhanceSelect } from '@byte.n/antd-ext';
 | `code`         | `string`              | ✅   | -                  | 压缩后的 JavaScript 代码  |
 | `codeMap`      | `string`              | ❌   | -                  | Source Map 的 JSON 字符串 |
 | `codeMapStyle` | `CodeMapStyle`        | ❌   | -                  | Source Map 的样式配置     |
+| `hoverRestoreDelayMs` | `number`       | ❌   | `2000`             | `toMinify` 触发的临时高亮在该毫秒后恢复原 hover；设为 `0` 则立即恢复 |
 | `prefixCls`    | `string`              | ❌   | `'source-map-vis'` | CSS 类名前缀              |
 | `className`    | `string`              | ❌   | -                  | 根容器的 CSS 类名         |
 | `style`        | `React.CSSProperties` | ❌   | -                  | 根容器的内联样式          |
@@ -151,3 +156,19 @@ import { EnhanceSelect } from '@byte.n/antd-ext';
 | ----------------- | -------------------------------------------- | ------------------------ |
 | `renderTopBar`    | `(props: TopBarProps) => React.ReactNode`    | 自定义顶部工具栏渲染函数 |
 | `renderBottomBar` | `(props: BottomBarProps) => React.ReactNode` | 自定义底部工具栏渲染函数 |
+
+## 实例方法
+
+### `toMinify(row, col)`
+
+- 功能：滚动并高亮压缩代码面板中位置为 `(row, col)` 的代码块，若存在映射则联动滚动到对应的源代码位置并绘制连线。
+- 坐标说明：`row` 为 1 基（从 1 开始），`col` 为 0 基（从 0 开始）。
+- 高亮恢复：受 `hoverRestoreDelayMs` 控制，默认 2000ms 后若无新的鼠标移动或再次调用将自动恢复原来的 hover 状态。
+
+### 其他实例方法
+
+- `selectSourceFile(index: number)`: 选择源文件面板的索引。
+- `wrap(enabled: boolean)`: 开关自动换行。
+- `setStyle(style: CodeMapStyle)`: 动态更新样式。
+- `resize()`: 手动触发画布尺寸与像素比更新。
+- `destroy()`: 移除事件与观察器，释放资源。

@@ -23,6 +23,7 @@ export interface InitConfig {
   onMinifyCodeHover: (value: CodeHover | null) => void;
   onOtherHover: (value: CodeHover | null) => void;
   resize: boolean;
+  hoverRestoreDelayMs?: number;
 }
 
 export interface CodeMapStyle {
@@ -65,6 +66,7 @@ export interface Instance {
   destroy: VoidFunction;
   resize: VoidFunction;
   setStyle: (style: CodeMapStyle) => void;
+  toMinify: (row: number, col: number) => void;
 }
 
 const defaultStyle = {
@@ -79,7 +81,7 @@ const defaultStyle = {
   scrollbar: {
     fillStyle: 'rgba(127, 127, 127, 0.5)',
     size: 10,
-    scrollXShadowRgb: [255, 0, 0],
+    scrollXShadowRgb: [127, 127, 127],
   },
   rowHeight: 22,
   textColor: '#000',
@@ -116,11 +118,17 @@ export default (config: InitConfig) => {
     onMinifyCodeHover,
     onOtherHover,
     resize,
+    hoverRestoreDelayMs,
   } = config;
 
   const style = {
     current: deepMerge(config.style, defaultStyle as CodeMapStyle),
   };
+
+  const hoverRestoreDelay =
+    typeof hoverRestoreDelayMs === 'number' && hoverRestoreDelayMs >= 0
+      ? hoverRestoreDelayMs
+      : 2000;
 
   // Use a striped pattern for bad mappings (good mappings are solid)
   const patternContours = [
@@ -426,7 +434,6 @@ export default (config: InitConfig) => {
     }
 
     function computeScrollbarsAndClampScroll() {
-      console.log('style.current:', style.current);
       const scrollbarThickness = style.current.scrollbar.size;
       const { width, height } = bounds();
       ctx.font = '14px monospace';
@@ -754,6 +761,8 @@ export default (config: InitConfig) => {
     return {
       sourceIndex,
       bounds,
+      mappings,
+      mappingsOffset,
 
       updateAfterWrapChange() {
         scrollX = 0;
@@ -992,11 +1001,11 @@ export default (config: InitConfig) => {
         }
 
         let mouseup = () => {
-          document.removeEventListener('mousemove', mousemove);
-          document.removeEventListener('mouseup', mouseup);
+          canvas.removeEventListener('mousemove', mousemove);
+          canvas.removeEventListener('mouseup', mouseup);
         };
-        document.addEventListener('mousemove', mousemove);
-        document.addEventListener('mouseup', mouseup);
+        canvas.addEventListener('mousemove', mousemove);
+        canvas.addEventListener('mouseup', mouseup);
         e.preventDefault();
       },
 
@@ -1744,6 +1753,90 @@ export default (config: InitConfig) => {
       if (originalTextArea) originalTextArea.updateAfterWrapChange();
       if (generatedTextArea) generatedTextArea.updateAfterWrapChange();
       isInvalid = true;
+    },
+    toMinify: (row: number, col: number) => {
+      if (!generatedTextArea) return;
+      
+      // 将行号从1-based转换为0-based
+      const lineIndex = row - 1;
+      const columnIndex = col;
+      
+      // 滚动到指定位置
+      generatedTextArea.scrollTo(columnIndex, lineIndex);
+      
+      // 查找对应的mapping：选择同一行上起始索引<=目标列的最后一个映射
+      let targetMapping = null;
+      if (generatedTextArea.mappings) {
+        const mappings = generatedTextArea.mappings;
+        const mappingsOffset = generatedTextArea.mappingsOffset || 0;
+        let lastCandidate = null;
+        let firstOnLine = null;
+        for (let i = 0; i < mappings.length; i += 6) {
+          const mappingLine = mappings[i + mappingsOffset];
+          if (mappingLine !== lineIndex) continue;
+          const startIndex = mappings[i + mappingsOffset + 1];
+          const candidate = {
+            generatedLine: mappings[i],
+            generatedColumn: mappings[i + 1],
+            originalSource: mappings[i + 2],
+            originalLine: mappings[i + 3],
+            originalColumn: mappings[i + 4],
+            originalName: mappings[i + 5],
+          };
+          if (!firstOnLine) firstOnLine = candidate;
+          if (startIndex <= columnIndex) {
+            if (!lastCandidate || startIndex >= lastCandidate.generatedColumn) {
+              lastCandidate = candidate;
+            }
+          }
+        }
+        targetMapping = lastCandidate || firstOnLine || null;
+      }
+      
+      // 设置hover状态以高亮：如果找到mapping，使用 mapping 的 generatedColumn 作为吸附列
+      const previousHover = hover;
+      const hoverColumn = targetMapping ? targetMapping.generatedColumn : columnIndex;
+      const newHover = {
+        sourceIndex: null,
+        lineIndex: lineIndex,
+        row: lineIndex,
+        column: hoverColumn,
+        index: hoverColumn,
+        mapping: targetMapping,
+      };
+      hover = newHover;
+
+      // 包含 onmousedown 的点击选中联动逻辑
+      if (targetMapping && originalTextArea) {
+        if (originalTextArea.sourceIndex !== targetMapping.originalSource) {
+          onSourceFileSelected(targetMapping.originalSource);
+          instance.selectSourceFile(targetMapping.originalSource);
+          Promise.resolve().then(() => {
+            if (originalTextArea) {
+              originalTextArea.scrollTo(
+                targetMapping.originalColumn,
+                targetMapping.originalLine,
+              );
+            }
+          });
+        } else {
+          originalTextArea.scrollTo(
+            targetMapping.originalColumn,
+            targetMapping.originalLine,
+          );
+        }
+      }
+      
+      // 触发重绘以显示高亮效果
+      isInvalid = true;
+      
+      // 延迟恢复原始hover状态（可选）
+      setTimeout(() => {
+        if (hover && hover === newHover) {
+          hover = previousHover;
+          isInvalid = true;
+        }
+      }, hoverRestoreDelay);
     },
     destroy: () => {
       resizeObserver.disconnect();

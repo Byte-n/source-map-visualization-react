@@ -26,8 +26,6 @@ export default (prefixCls: string) => {
           gap: 6,
           [`.${prefixCls}-source, .${prefixCls}-minify`]: {
             flex: 1,
-          },
-          [`.${prefixCls}-source`]: {
             display: 'flex',
             gap: 6,
             flexDirection: 'row',

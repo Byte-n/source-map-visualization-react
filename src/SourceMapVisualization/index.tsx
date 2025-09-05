@@ -12,6 +12,7 @@ export interface SourceMapVisualizationProps {
   code: string;
   codeMap?: string;
   codeMapStyle?: CodeMapStyle;
+  hoverRestoreDelayMs?: number;
   prefixCls?: string;
   className?: string;
   classNames?: {
@@ -50,6 +51,7 @@ export default forwardRef(
       code,
       codeMap,
       codeMapStyle,
+      hoverRestoreDelayMs,
       prefixCls = 'source-map-vis',
       className,
       classNames,
@@ -78,6 +80,7 @@ export default forwardRef(
         codeMap,
         canvas: canvasRef.current!,
         resize: true,
+        hoverRestoreDelayMs,
         style: codeMapStyle,
         onSourceFileSelected: setSelectedFile,
         onSourceFileListChange: setFilesList,
@@ -133,7 +136,16 @@ export default forwardRef(
                     : 'loading...'}
                 </select>
               </div>
-              <span className={`${prefixCls}-minify`}>minify</span>
+              <div className={`${prefixCls}-minify`}>
+                <span>
+                  minify
+                </span>
+                <button onClick={() => {
+                  codeMapRef.current?.toMinify(28, 16);
+                }}>
+                  toMinify
+                </button>
+              </div>
             </>
           )}
         </div>
