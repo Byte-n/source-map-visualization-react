@@ -4,69 +4,139 @@ import parseSourceMap from './parseSourceMap';
 import splitTextIntoLinesAndRuns from './splitTextIntoLinesAndRuns';
 
 export interface CodeHover {
+  /** 行号（1-based） */
   row: number;
+  /** 列号（0-based） */
   col: number;
 }
 
 export interface SourceCodeHover extends CodeHover {
+  /** 源文件名称 */
   source: string;
 }
 
 export interface InitConfig {
-  code: string;
+  /** 压缩后的代码内容 */
+  code?: string;
+  /** Source Map 字符串 */
   codeMap: string;
+  /** 用于渲染的 Canvas 元素 */
   canvas: HTMLCanvasElement;
+  /** 样式配置 */
   style?: CodeMapStyle;
+  /** 源文件选择回调 */
   onSourceFileSelected: (value: number) => void;
+  /** 源文件列表变化回调 */
   onSourceFileListChange: (fls: { label: string; value: number }[]) => void;
+  /** 源代码悬停回调 */
   onSourceCodeHover: (value: SourceCodeHover | null) => void;
+  /** 压缩代码悬停回调 */
   onMinifyCodeHover: (value: CodeHover | null) => void;
+  /** 其他悬停回调 */
   onOtherHover: (value: CodeHover | null) => void;
+  /** 是否启用自动调整大小 */
   resize: boolean;
+  /** 悬停状态恢复延迟时间（毫秒） */
   hoverRestoreDelayMs?: number;
 }
 
 export interface CodeMapStyle {
+  /** 文本颜色 */
   textColor?: string;
+  /** 字体样式 */
   font?: string;
+  /** 行号样式配置 */
   lineNumber?: {
+    /** 行号区域宽度 */
     width?: number;
+    /** 行号边框颜色 */
     borderColor?: string;
+    /** 行号背景颜色 */
     backgroundColor?: string;
+    /** 行号文字颜色 */
     textColor?: string;
+    /** 行号字体样式 */
     font?: string;
   };
+  /** 滚动条样式配置 */
   scrollbar?: {
+    /** 滚动条填充颜色 */
     fillStyle?: string;
+    /** 滚动条大小 */
     size?: number;
+    /** 水平滚动条阴影 RGB 值 */
     scrollXShadowRgb?: [number, number, number];
   };
+  /** 背景颜色 */
   backgroundColor?: string;
+  /** 源代码映射颜色数组 */
   sourceCodeColors?: string[];
+  /** 行高 */
   rowHeight?: number;
+  /** 悬停框样式配置 */
   hoverBox?: {
+    /** 阴影模糊半径 */
     shadowBlur?: number;
+    /** 填充颜色 */
     fillStyle?: string;
+    /** 边框颜色 */
     strokeStyle?: string;
+    /** 边框宽度 */
     lineWidth?: number;
   };
+  /** 光标样式配置 */
   caret?: {
+    /** 光标文字颜色 */
     textColor?: string;
   };
+  /** 悬停箭头样式配置 */
   hoverArrow?: {
+    /** 箭头颜色 */
     color?: string;
+    /** 箭头线条宽度 */
     lineWidth?: number;
+    /** 箭头半径 */
     arrowR?: number;
   };
 }
 
 export interface Instance {
+  /**
+   * 选择源文件
+   * @param idx 源文件索引
+   */
   selectSourceFile: (idx: number) => void;
+  
+  /**
+   * 设置文本换行模式
+   * @param val true 启用换行，false 禁用换行
+   */
   wrap: (val: boolean) => void;
+  
+  /**
+   * 销毁实例，清理所有事件监听器和资源
+   */
   destroy: VoidFunction;
+  
+  /**
+   * 调整画布大小以适应容器
+   */
   resize: VoidFunction;
+  
+  /**
+   * 设置样式配置
+   * @param style 样式配置对象
+   */
   setStyle: (style: CodeMapStyle) => void;
-  toMinify: (row: number, col: number) => void;
+  
+  /**
+   * 跳转到压缩代码的指定位置
+   * @param row 行号（1-based）
+   * @param col 列号（0-based）
+   * @param config 配置选项
+   * @param config.throwErrorOnOutOfRange 当行号超出范围时是否抛出错误，默认为 false
+   */
+  toMinify: (row: number, col: number, config?: { throwErrorOnOutOfRange: boolean }) => void;
 }
 
 const defaultStyle = {
@@ -107,6 +177,11 @@ const defaultStyle = {
   },
 };
 
+/**
+ * 初始化 Source Map 可视化实例
+ * @param config 初始化配置
+ * @returns 返回实例对象，包含各种控制方法
+ */
 export default (config: InitConfig) => {
   const {
     code,
@@ -216,8 +291,7 @@ export default (config: InitConfig) => {
         map = await fetch(new URL(url)).then((r) => r.text());
       } catch (e) {
         throw Error(
-          `Failed to parse the URL in the "/${
-            match[1]
+          `Failed to parse the URL in the "/${match[1]
           }# sourceMappingURL=" comment: ${(e && e.message) || e}`,
         );
       }
@@ -299,7 +373,7 @@ export default (config: InitConfig) => {
 
     generatedTextArea = createTextArea({
       sourceIndex: null,
-      text: code,
+      text: code || '',
       progress,
       mappings: sm.data,
       mappingsOffset: 0,
@@ -406,7 +480,7 @@ export default (config: InitConfig) => {
         1,
         Math.floor(
           (width - lineNumberWidth - textPaddingX - scrollbarThickness) /
-            columnWidth,
+          columnWidth,
         ),
       );
     }
@@ -457,10 +531,10 @@ export default (config: InitConfig) => {
       } else {
         maxScrollX = Math.round(
           longestLineInColumns * columnWidth +
-            textPaddingX * 2 +
-            lineNumberWidth +
-            scrollbarThickness -
-            width,
+          textPaddingX * 2 +
+          lineNumberWidth +
+          scrollbarThickness -
+          width,
         );
         maxScrollY = lastLineIndex * style.current.rowHeight;
       }
@@ -556,7 +630,7 @@ export default (config: InitConfig) => {
           if (
             (tabStopBehavior === 'round' &&
               fractionalColumn >=
-                (run_startColumn(run) + run_endColumn(run)) / 2) ||
+              (run_startColumn(run) + run_endColumn(run)) / 2) ||
             (tabStopBehavior === 'floor' &&
               fractionalColumn >= run_endColumn(run))
           ) {
@@ -663,8 +737,8 @@ export default (config: InitConfig) => {
           startIndex > endOfLineIndex
             ? startIndex
             : hasTrailingNewline && startIndex < beforeNewlineIndex
-            ? beforeNewlineIndex
-            : endOfLineIndex;
+              ? beforeNewlineIndex
+              : endOfLineIndex;
         let isLastMappingInLine = false;
 
         // Ignore subsequent duplicate mappings
@@ -748,10 +822,10 @@ export default (config: InitConfig) => {
       const x1 = Math.round(dx + startColumn * columnWidth + 1);
       const x2 = Math.round(
         dx +
-          (startColumn === endColumn
-            ? startColumn * columnWidth + 4
-            : endColumn * columnWidth) -
-          1,
+        (startColumn === endColumn
+          ? startColumn * columnWidth + 4
+          : endColumn * columnWidth) -
+        1,
       );
       const y1 = Math.round(dy + 2);
       const y2 = Math.round(dy + +style.current.rowHeight - 2);
@@ -763,6 +837,7 @@ export default (config: InitConfig) => {
       bounds,
       mappings,
       mappingsOffset,
+      lines,
 
       updateAfterWrapChange() {
         scrollX = 0;
@@ -816,9 +891,9 @@ export default (config: InitConfig) => {
         });
         return [x1, y1, x2 - x1, y2 - y1];
       },
-
       onwheel(e) {
         const { x, y, width, height } = bounds();
+
         const rect = canvas.getBoundingClientRect();
         const localX = e.clientX - rect.left;
         const localY = e.clientY - rect.top;
@@ -950,8 +1025,8 @@ export default (config: InitConfig) => {
             const localXNow = e.clientX - rect.left;
             scrollX = Math.round(
               originalScrollX +
-                ((localXNow - x - px) * maxScrollX) /
-                  (scrollbarX.trackLength - scrollbarX.thumbLength),
+              ((localXNow - x - px) * maxScrollX) /
+              (scrollbarX.trackLength - scrollbarX.thumbLength),
             );
             computeScrollbarsAndClampScroll();
             isInvalid = true;
@@ -963,8 +1038,8 @@ export default (config: InitConfig) => {
             const localYNow = e.clientY - rect.top;
             scrollY = Math.round(
               originalScrollY +
-                ((localYNow - y - py) * maxScrollY) /
-                  (scrollbarY.trackLength - scrollbarY.thumbLength),
+              ((localYNow - y - py) * maxScrollY) /
+              (scrollbarY.trackLength - scrollbarY.thumbLength),
             );
             computeScrollbarsAndClampScroll();
             isInvalid = true;
@@ -1027,10 +1102,10 @@ export default (config: InitConfig) => {
         const range = rangeOfMapping(firstMapping);
         const targetColumn = range
           ? range.startColumn +
-            Math.min(
-              (range.endColumn - range.startColumn) / 2,
-              (width - lineNumberWidth) / 4 / columnWidth,
-            )
+          Math.min(
+            (range.endColumn - range.startColumn) / 2,
+            (width - lineNumberWidth) / 4 / columnWidth,
+          )
           : column;
         const endX = Math.max(
           0,
@@ -1112,12 +1187,12 @@ export default (config: InitConfig) => {
                 text = runText[i] = !whitespace
                   ? raw.slice(run_startIndex(run), run_endIndex(run))
                   : whitespace === 0x20 /* space */
-                  ? '·'.repeat(run_endIndex(run) - run_startIndex(run))
-                  : whitespace === 0x0a /* newline */
-                  ? lineIndex === lines.length - 1
-                    ? '∅'
-                    : '↵'
-                  : '→' /* tab */;
+                    ? '·'.repeat(run_endIndex(run) - run_startIndex(run))
+                    : whitespace === 0x0a /* newline */
+                      ? lineIndex === lines.length - 1
+                        ? '∅'
+                        : '↵'
+                      : '→' /* tab */;
               }
 
               // Limit the run to the visible columns (but only for ASCII runs)
@@ -1175,15 +1250,15 @@ export default (config: InitConfig) => {
                 hoveredMapping &&
                 (isGenerated !== hoverIsGenerated
                   ? // If this is on the opposite pane from the mouse, show all
-                    // mappings that match the hovered mapping instead of showing
-                    // an exact match.
-                    matchesGenerated || matchesOriginal
+                  // mappings that match the hovered mapping instead of showing
+                  // an exact match.
+                  matchesGenerated || matchesOriginal
                   : // If this is on the same pane as the mouse, only show the exact
                   // mapping instead of showing everything that matches the target
                   // so hovering isn't confusing.
                   isGenerated
-                  ? matchesGenerated
-                  : matchesOriginal);
+                    ? matchesGenerated
+                    : matchesOriginal);
               if (
                 isGenerated &&
                 matchesGenerated &&
@@ -1194,8 +1269,8 @@ export default (config: InitConfig) => {
                   text: originalName(hoveredMapping.originalName),
                   x: Math.round(
                     dx +
-                      range.startColumn * columnWidth -
-                      hoverBoxLineThickness,
+                    range.startColumn * columnWidth -
+                    hoverBoxLineThickness,
                   ),
                   y: Math.round(dy + 1.2 * style.current.rowHeight),
                 };
@@ -1250,7 +1325,7 @@ export default (config: InitConfig) => {
               width -
               lineNumberWidth -
               (wrap ? scrollbarThickness : 0)) /
-              columnWidth,
+            columnWidth,
           ),
         );
         const firstRow = Math.max(
@@ -1506,8 +1581,7 @@ export default (config: InitConfig) => {
             let t = i / 10;
             gradient.addColorStop(
               t,
-              `rgba(${style.current.scrollbar.scrollXShadowRgb.join(',')}, ${
-                (1 - t) * (1 - t) * 0.2
+              `rgba(${style.current.scrollbar.scrollXShadowRgb.join(',')}, ${(1 - t) * (1 - t) * 0.2
               })`,
             );
           }
@@ -1521,7 +1595,7 @@ export default (config: InitConfig) => {
             x +
             lineNumberWidth +
             (scrollX / maxScrollX) *
-              (scrollbarX.trackLength - scrollbarX.thumbLength);
+            (scrollbarX.trackLength - scrollbarX.thumbLength);
           let dy = y + height - scrollbarThickness;
           ctx.fillStyle = scrollbarColor;
           ctx.beginPath();
@@ -1548,7 +1622,7 @@ export default (config: InitConfig) => {
           let dy =
             y +
             (scrollY / maxScrollY) *
-              (scrollbarY.trackLength - scrollbarY.thumbLength);
+            (scrollbarY.trackLength - scrollbarY.thumbLength);
           ctx.fillStyle = scrollbarColor;
           ctx.beginPath();
           ctx.arc(
@@ -1754,16 +1828,30 @@ export default (config: InitConfig) => {
       if (generatedTextArea) generatedTextArea.updateAfterWrapChange();
       isInvalid = true;
     },
-    toMinify: (row: number, col: number) => {
-      if (!generatedTextArea) return;
-      
+    toMinify: (row: number, col: number, { throwErrorOnOutOfRange } = { throwErrorOnOutOfRange: false }) => {
+      if (!generatedTextArea) {
+        if (throwErrorOnOutOfRange) {
+          throw Error('Initialization failed');
+        }
+        return;
+      }
+
       // 将行号从1-based转换为0-based
-      const lineIndex = row - 1;
-      const columnIndex = col;
-      
+      let lineIndex = row - 1;
+      let columnIndex = col;
+
+      // 检查行号是否超出范围，如果超出则限制到最大行数
+      if (lineIndex >= generatedTextArea.lines.length) {
+        lineIndex = generatedTextArea.lines.length - 1;
+        columnIndex = 0;
+        if (throwErrorOnOutOfRange) {
+          throw Error('Row index out of range');
+        }
+      }
+
       // 滚动到指定位置
       generatedTextArea.scrollTo(columnIndex, lineIndex);
-      
+
       // 查找对应的mapping：选择同一行上起始索引<=目标列的最后一个映射
       let targetMapping = null;
       if (generatedTextArea.mappings) {
@@ -1792,7 +1880,7 @@ export default (config: InitConfig) => {
         }
         targetMapping = lastCandidate || firstOnLine || null;
       }
-      
+
       // 设置hover状态以高亮：如果找到mapping，使用 mapping 的 generatedColumn 作为吸附列
       const previousHover = hover;
       const hoverColumn = targetMapping ? targetMapping.generatedColumn : columnIndex;
@@ -1826,10 +1914,10 @@ export default (config: InitConfig) => {
           );
         }
       }
-      
+
       // 触发重绘以显示高亮效果
       isInvalid = true;
-      
+
       // 延迟恢复原始hover状态（可选）
       setTimeout(() => {
         if (hover && hover === newHover) {

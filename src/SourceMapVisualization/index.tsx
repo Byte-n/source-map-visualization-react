@@ -7,10 +7,12 @@ import React, {
 } from 'react';
 import init, { CodeHover, CodeMapStyle, Instance, SourceCodeHover } from './init';
 import useStyle from './useStyle';
+import DefaultTopBar from './DefaultTopBar';
+import DefaultBottomBar from './DefaultBottomBar';
 
 export interface SourceMapVisualizationProps {
-  code: string;
-  codeMap?: string;
+  code?: string;
+  codeMap: string;
   codeMapStyle?: CodeMapStyle;
   hoverRestoreDelayMs?: number;
   prefixCls?: string;
@@ -70,14 +72,16 @@ export default forwardRef(
       null,
     );
     const [otherHover, setOtherHover] = useState<CodeHover | null>(null);
+    const [minifyRow, setMinifyRow] = useState<number>(28);
+    const [minifyCol, setMinifyCol] = useState<number>(16);
 
     const codeMapRef = useRef<Instance>();
     useEffect(() => {
       canvasRef.current.width = canvasRef.current.parentElement.clientWidth;
       canvasRef.current.height = canvasRef.current.parentElement.clientHeight;
       codeMapRef.current = init({
-        code,
-        codeMap,
+        code: code ? code : '',
+        codeMap: codeMap ? codeMap : '',
         canvas: canvasRef.current!,
         resize: true,
         hoverRestoreDelayMs,
@@ -116,37 +120,22 @@ export default forwardRef(
               onSelectFile: setSelectedFile,
             })
           ) : (
-            <>
-              <div className={`${prefixCls}-source`}>
-                <span>source</span>
-                <select
-                  className={`${prefixCls}-default-select`}
-                  value={selectedFile}
-                  onChange={(e) => {
-                    codeMapRef.current.selectSourceFile(e.target.selectedIndex);
-                    setSelectedFile(e.target.selectedIndex);
-                  }}
-                >
-                  {filesList
-                    ? filesList.map((v) => (
-                        <option key={v.value} value={v.value}>
-                          {v.label}
-                        </option>
-                      ))
-                    : 'loading...'}
-                </select>
-              </div>
-              <div className={`${prefixCls}-minify`}>
-                <span>
-                  minify
-                </span>
-                <button onClick={() => {
-                  codeMapRef.current?.toMinify(28, 16);
-                }}>
-                  toMinify
-                </button>
-              </div>
-            </>
+            <DefaultTopBar
+              selectedFile={selectedFile}
+              filesList={filesList}
+              onSelectFile={(value) => {
+                codeMapRef.current?.selectSourceFile(value);
+                setSelectedFile(value);
+              }}
+              prefixCls={prefixCls}
+              minifyRow={minifyRow}
+              minifyCol={minifyCol}
+              onMinifyRowChange={setMinifyRow}
+              onMinifyColChange={setMinifyCol}
+              onToMinify={(row, col) => {
+                codeMapRef.current?.toMinify(row, col);
+              }}
+            />
           )}
         </div>
         <div
@@ -166,24 +155,14 @@ export default forwardRef(
               minifyCodeHover,
             })
           ) : (
-            <>
-              <div className={`${prefixCls}-bottom-bar-default-left`}>
-                {sourceCodeHover &&
-                  `[${sourceCodeHover.row}:${sourceCodeHover.col}], ${sourceCodeHover.source}`}
-              </div>
-              <div className={`${prefixCls}-bottom-bar-default-right`}>
-                <div>
-                  {otherHover
-                    ? `mouse: [${otherHover.row}:${otherHover.col}]`
-                    : ''}
-                </div>
-                <div>
-                  {minifyCodeHover &&
-                    `[${minifyCodeHover.row}:${minifyCodeHover.col}]`}
-                </div>
-              </div>
-            </>
-          )}
+             <DefaultBottomBar
+              sourceCodeHover={sourceCodeHover}
+              otherHover={otherHover}
+              minifyCodeHover={minifyCodeHover}
+              prefixCls={prefixCls}
+             />
+            )
+          }
         </div>
       </div>,
     );
