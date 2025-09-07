@@ -1,5 +1,7 @@
 # Source Map Visualization React
 
+[![npm version](https://img.shields.io/npm/v/@byte.n/source-map-visualization-react.svg)](https://www.npmjs.com/package/@byte.n/source-map-visualization-react)
+
 一个基于 React 的 Source Map 可视化组件库，用于分析 JavaScript 源码映射数据。
 
 - demo 地址：https://byte-n.github.io/source-map-visualization-react
@@ -47,22 +49,6 @@ export default () => {
 
 - **最小必需属性**: `code`
 - **可选属性**: `codeMap`、`codeMapStyle`、`hoverRestoreDelayMs`、`prefixCls`、`className`、`classNames`、`style`、`styles`、`renderTopBar`、`renderBottomBar`
-
-## 类型
-
-`@types` 已内置，无需额外安装：
-
-```ts
-import type {
-  SourceMapVisualizationProps,
-  TopBarProps,
-  BottomBarProps,
-  CodeHover,
-  SourceCodeHover,
-  CodeMapStyle,
-  Instance,
-} from '@byte.n/source-map-visualization-react';
-```
 
 ## 文档
 
