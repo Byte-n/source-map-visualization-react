@@ -2,15 +2,11 @@
 
 一个基于 React 的 Source Map 可视化组件库，用于分析 JavaScript 源码映射数据。
 
+- demo 地址：https://byte-n.github.io/source-map-visualization-react
+
 ## 关于
 
 本库参考并基于 [evanw/source-map-visualization](https://github.com/evanw/source-map-visualization) 项目进行开发，将原有的 JavaScript 实现封装为 React 组件，提供了更好的集成性和可定制性。
-
-### 原始项目
-
-- **项目地址**: https://github.com/evanw/source-map-visualization
-- **在线演示**: https://evanw.github.io/source-map-visualization/
-- **项目描述**: 一个简单的 Source Map 数据可视化工具，专为高性能设计，能够处理大型 Source Map 而不会崩溃
 
 ### 本库特色
 
