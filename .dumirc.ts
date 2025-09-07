@@ -1,7 +1,15 @@
 import { defineConfig } from 'dumi';
 
 export default defineConfig({
+  base:
+    process.env.NODE_ENV === 'production'
+      ? '/source-map-visualization-react/'
+      : '/',
   outputPath: 'docs-dist',
+  publicPath:
+    process.env.NODE_ENV === 'production'
+      ? '/source-map-visualization-react/'
+      : '/',
   themeConfig: {
     rtl: false,
     sourceLink: undefined,
